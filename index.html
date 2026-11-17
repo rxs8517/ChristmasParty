@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D1F2D">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>EZScript Christmas Party — RSVP</title>
+<meta name="description" content="Join EZScript for Christmas Celebrations in Newport Beach, California on December 17, 2026. RSVP here.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="You're invited: EZScript Christmas Celebrations">
+<meta property="og:description" content="Thursday, December 17, 2026 · Newport Beach, California. Kindly RSVP.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="assets/ezscript-logo.png">
+<link rel="apple-touch-icon" href="assets/ezscript-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0B1A26; --night2:#0D1F2D; --deep:#15532E; --green:#1DB954; --green2:#16B14B;
+    --gold:#E8C468; --red:#C8323C; --ink:#14212B; --muted:#5B6B76; --line:#E3E8EC; --card:#FFFDF8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:Inter,system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 700px at 50% -10%,#1B3A52 0%,var(--night2) 45%,var(--night) 100%);
+    min-height:100vh;min-height:100dvh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;
+    padding:calc(env(safe-area-inset-top) + 40px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 120px) calc(env(safe-area-inset-left) + 16px);
+    -webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+  }
+  button,a,.choice{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  canvas.layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  #snow{z-index:0} #fx{z-index:5}
+  /* coastline silhouette */
+  .coast{position:fixed;left:0;right:0;bottom:0;height:clamp(80px,14vh,140px);z-index:1;pointer-events:none}
+  /* string lights */
+  .lights{position:fixed;top:env(safe-area-inset-top);left:0;right:0;height:60px;z-index:1;pointer-events:none}
+  .bulb{animation:twinkle 2.4s ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .card{
+    position:relative;z-index:2;width:100%;max-width:540px;background:var(--card);border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 1px rgba(232,196,104,.35);overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;
+    background:linear-gradient(90deg,var(--green) 0%,var(--deep) 35%,var(--gold) 50%,var(--deep) 65%,var(--green) 100%)}
+  .logo{display:block;width:150px;margin:30px auto 0}
+  .screen{display:none;padding:22px clamp(20px,6vw,40px) 36px}
+  .screen.active{display:block;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--deep);font-weight:600;text-align:center}
+  h1{font-family:"Playfair Display",serif;font-weight:600;font-size:clamp(28px,7vw,38px);line-height:1.12;text-align:center;margin:10px 0 12px;color:var(--night2)}
+  h1 em{font-style:italic;font-weight:500;color:var(--deep)}
+  .lede{text-align:center;color:var(--muted);font-size:15.5px;line-height:1.6;max-width:400px;margin:0 auto}
+  .details{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:26px 0 28px}
+  .detail{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff;display:flex;gap:12px;align-items:center}
+  .detail svg{flex:none}
+  .detail b{display:block;font-size:14px;color:var(--night2)}
+  .detail span{font-size:12.5px;color:var(--muted)}
+  .divider{display:flex;align-items:center;gap:10px;justify-content:center;margin:16px 0 4px;color:var(--gold)}
+  .divider i{height:1px;width:60px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+
+  .btn{-webkit-appearance:none;appearance:none;border:0;min-height:48px;cursor:pointer;font:600 15px Inter,sans-serif;border-radius:12px;padding:15px 22px;transition:transform .12s,box-shadow .2s,background .2s}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{width:100%;color:#fff;background:linear-gradient(135deg,var(--green2),var(--deep));box-shadow:0 10px 24px rgba(21,83,46,.32)}
+  .btn-primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .btn-ghost{background:transparent;color:var(--muted);padding:10px 4px;font-weight:500}
+
+  /* form steps */
+  .progress{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .bar{flex:1;min-width:40px;height:6px;border-radius:6px;background:#EEF1F3;margin:0 14px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--deep));border-radius:6px;transition:width .4s ease}
+  .stepnum{font-size:12.5px;color:var(--muted);font-weight:500;white-space:nowrap}
+  .back{display:inline-flex;align-items:center;gap:4px}
+  .q{font-family:"Playfair Display",serif;font-size:clamp(21px,5.6vw,27px);font-weight:600;line-height:1.25;color:var(--night2);margin-bottom:6px}
+  .qsub{color:var(--muted);font-size:14.5px;margin-bottom:20px}
+  .field{position:relative;margin-bottom:8px}
+  input.text{-webkit-appearance:none;appearance:none;width:100%;min-height:52px;font:500 17px Inter,sans-serif;padding:16px 16px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);outline:none;transition:border .2s,box-shadow .2s}
+  input.text:focus{border-color:var(--green2);box-shadow:0 0 0 4px rgba(22,177,75,.14)}
+  input.text.invalid{border-color:var(--red);box-shadow:0 0 0 4px rgba(200,50,60,.12)}
+  .err{min-height:20px;font-size:13px;color:var(--red);margin:6px 2px 14px}
+  .hint{font-size:12.5px;color:var(--muted);margin:-4px 2px 14px}
+  .choices{display:grid;gap:10px;margin-bottom:22px}
+  .choices.three{grid-template-columns:repeat(3,1fr)}
+  .choices.four{grid-template-columns:repeat(4,1fr)}
+  .choice{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:18px 8px;cursor:pointer;text-align:center;font:600 16px Inter,sans-serif;color:var(--night2);transition:all .18s}
+  .choice small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:4px}
+  .choice .ic{display:block;font-size:22px;margin-bottom:6px;line-height:1}
+  .choice.sel{border-color:var(--green2);background:linear-gradient(180deg,#F1FBF4,#E3F6EA);box-shadow:0 0 0 4px rgba(22,177,75,.14)}
+  .choice.sel small{color:var(--deep)}
+  .four .choice{font-size:24px;padding:20px 0}
+
+  /* review */
+  .review{border:1px solid var(--line);border-radius:14px;background:#fff;margin:6px 0 22px}
+  .review div{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-size:14.5px}
+  .review div:first-child{border-top:0}
+  .review span{color:var(--muted)} .review b{text-align:right;word-break:break-word}
+  .review a{color:var(--deep);font-size:12.5px;font-weight:600;cursor:pointer;margin-left:8px;text-decoration:none}
+
+  /* finale */
+  #s-done{text-align:center}
+  .merry{font-family:"Great Vibes",cursive;font-size:clamp(46px,14vw,66px);line-height:1;color:var(--red);margin:8px 0 2px;
+    text-shadow:0 2px 0 rgba(232,196,104,.35)}
+  .merry2{font-family:"Playfair Display",serif;font-size:20px;color:var(--night2);margin-bottom:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:18px 0 24px}
+  .chip{font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:999px;background:#EEF7F1;color:var(--deep);border:1px solid #CFE9D8}
+  .cal-row{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .btn-cal{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+  .alt{font-size:12.5px;color:var(--muted)}
+  .alt a{color:var(--deep);font-weight:600;text-decoration:none}
+  .toast{font-size:13px;color:var(--deep);min-height:18px}
+  .footer{position:relative;z-index:2;text-align:center;color:rgba(255,255,255,.55);font-size:12px;margin-top:18px}
+  .wrap{width:100%;max-width:540px}
+
+  @media (hover:hover) and (pointer:fine){
+    .btn-primary:hover{box-shadow:0 14px 30px rgba(21,83,46,.42)}
+    .btn-ghost:hover{color:var(--ink)}
+    .choice:hover{border-color:#B9D9C4;transform:translateY(-2px)}
+    .alt a:hover{text-decoration:underline}
+  }
+  .choice:active{transform:scale(.97)}
+  .alt{line-height:2}
+  .alt a{padding:6px 2px}
+  @media (min-width:768px){ .wrap{max-width:560px} .card{max-width:560px} }
+  @media (max-width:520px){
+    body{padding-top:calc(env(safe-area-inset-top) + 28px)}
+    .card{border-radius:18px}
+    .screen{padding:16px 20px 26px}
+    .details{grid-template-columns:1fr;margin:20px 0 22px}
+    .logo{width:128px;margin-top:24px}
+    .lede{font-size:15px}
+    .review div{flex-wrap:wrap}
+    .review b{text-align:left}
+  }
+  @media (max-width:360px){
+    .choices.three{grid-template-columns:1fr}
+    .choices.three .choice{display:flex;align-items:center;gap:12px;text-align:left;padding:14px 16px}
+    .choices.three .choice .ic{margin:0}
+    .choices.three .choice small{margin:0 0 0 auto}
+    .four .choice{font-size:21px;padding:16px 0}
+    .stepnum{font-size:11.5px}
+  }
+  @media (max-height:520px) and (orientation:landscape){
+    body{align-items:flex-start;padding-top:calc(env(safe-area-inset-top) + 14px);padding-bottom:calc(env(safe-area-inset-bottom) + 24px)}
+    .coast,.lights{display:none}
+    .logo{width:104px;margin-top:16px}
+    .screen{padding-top:10px;padding-bottom:20px}
+    .details{grid-template-columns:1fr 1fr;margin:14px 0 16px}
+    .choices{margin-bottom:12px}
+    .chips{margin:10px 0 14px}
+  }
+  @media (prefers-reduced-motion:reduce){.bulb{animation:none}.screen.active{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="snow" class="layer"></canvas>
+
+<!-- string lights -->
+<svg class="lights" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0 8 Q 150 46 300 10 T 600 10 T 900 10 T 1200 8" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1.5"/>
+  <g id="bulbs"></g>
+</svg>
+
+<!-- Newport coastline: waves + palms -->
+<svg class="coast" viewBox="0 0 1200 140" preserveAspectRatio="none" aria-hidden="true">
+  <defs><linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F2C3F"/><stop offset="1" stop-color="#081521"/></linearGradient></defs>
+  <path d="M0 92 C 120 78 240 104 360 90 S 600 76 720 92 S 960 104 1080 88 S 1200 86 1200 86 V140 H0Z" fill="url(#sea)"/>
+  <path d="M0 104 C 140 94 260 114 400 102 S 640 92 780 106 S 1020 112 1200 100" fill="none" stroke="rgba(232,196,104,.18)" stroke-width="1.5"/>
+  <g fill="#06111A">
+    <path d="M86 92 C 90 60 92 40 96 20 L100 20 C 97 40 95 62 93 92Z"/>
+    <path d="M98 22 C 80 14 64 18 52 30 C 68 22 84 22 98 24Z M98 22 C 116 12 134 16 146 28 C 130 22 114 22 98 24Z M98 22 C 92 8 80 2 66 4 C 80 8 90 14 98 24Z M98 22 C 108 6 122 2 136 6 C 122 8 108 14 98 24Z"/>
+    <path d="M1096 90 C 1092 62 1090 44 1084 26 L1088 26 C 1094 44 1098 62 1102 90Z"/>
+    <path d="M1086 28 C 1068 20 1052 24 1040 36 C 1056 28 1072 28 1086 30Z M1086 28 C 1104 18 1122 22 1134 34 C 1118 28 1102 28 1086 30Z M1086 28 C 1080 14 1068 8 1054 10 C 1068 14 1078 20 1086 30Z M1086 28 C 1096 12 1110 8 1124 12 C 1110 14 1096 20 1086 30Z"/>
+  </g>
+</svg>
+
+<canvas id="fx" class="layer"></canvas>
+
+<div class="wrap">
+<main class="card" aria-live="polite">
+  <img class="logo" alt="EZScript" src="assets/ezscript-logo.png" width="640" height="273">
+
+  <!-- 0. Invitation -->
+  <section class="screen active" id="s-invite">
+    <div class="divider"><i></i>✦<i></i></div>
+    <p class="eyebrow">You're Invited</p>
+    <h1>Christmas <em>Celebrations</em><br>by the Coast</h1>
+    <p class="lede">Join the EZScript family for an evening of festive cheer, good company and a toast to the year we've shared together.</p>
+    <div class="details">
+      <div class="detail">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="2" y="5" width="30" height="27" rx="6" fill="#EEF7F1" stroke="#15532E" stroke-width="1.5"/><path d="M2 12h30" stroke="#15532E" stroke-width="1.5"/><path d="M10 2v6M24 2v6" stroke="#15532E" stroke-width="1.8" stroke-linecap="round"/><text x="17" y="27" text-anchor="middle" font-family="Inter" font-weight="700" font-size="11" fill="#15532E">17</text></svg>
+        <div><b>Thursday, Dec 17</b><span>2026</span></div>
+      </div>
+      <div class="detail">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="16" fill="#EEF7F1"/><path d="M17 8a6.5 6.5 0 0 0-6.5 6.5c0 4.8 6.5 11.5 6.5 11.5s6.5-6.7 6.5-11.5A6.5 6.5 0 0 0 17 8Z" fill="none" stroke="#15532E" stroke-width="1.6"/><circle cx="17" cy="14.5" r="2.3" fill="#15532E"/></svg>
+        <div><b>Newport Beach</b><span>California</span></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="startRSVP()">RSVP Now</button>
+  </section>
+
+  <!-- 1. Name -->
+  <section class="screen" id="s-1">
+    <div class="progress"><button class="btn btn-ghost back" onclick="go(0)">← Back</button><div class="bar"><i></i></div><span class="stepnum">1 of 5</span></div>
+    <p class="q">Your Name</p>
+    <p class="qsub">So we know who to welcome at the door.</p>
+    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+    <div class="field"><input class="text" id="name" type="text" autocomplete="name" placeholder="First and last name" maxlength="80"></div>
+    <div class="err" id="err-name"></div>
+    <button class="btn btn-primary" onclick="next(1)">Continue</button>
+  </section>
+
+  <!-- 2. Email -->
+  <section class="screen" id="s-2">
+    <div class="progress"><button class="btn btn-ghost back" onclick="go(1)">← Back</button><div class="bar"><i></i></div><span class="stepnum">2 of 5</span></div>
+    <p class="q">Email</p>
+    <p class="qsub">We'll send event details and any updates here.</p>
+    <div class="field"><input class="text" id="email" type="email" inputmode="email" autocomplete="email" placeholder="name@company.com" maxlength="120"></div>
+    <div class="err" id="err-email"></div>
+    <button class="btn btn-primary" onclick="next(2)">Continue</button>
+  </section>
+
+  <!-- 3. Phone -->
+  <section class="screen" id="s-3">
+    <div class="progress"><button class="btn btn-ghost back" onclick="go(2)">← Back</button><div class="bar"><i></i></div><span class="stepnum">3 of 5</span></div>
+    <p class="q">Phone Number</p>
+    <p class="qsub">In case we need to reach you on the day.</p>
+    <div class="field"><input class="text" id="phone" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="tel" placeholder="9495550123" maxlength="15"></div>
+    <div class="hint">Numbers only — no spaces, dashes or symbols.</div>
+    <div class="err" id="err-phone"></div>
+    <button class="btn btn-primary" onclick="next(3)">Continue</button>
+  </section>
+
+  <!-- 4. Attending -->
+  <section class="screen" id="s-4">
+    <div class="progress"><button class="btn btn-ghost back" onclick="go(3)">← Back</button><div class="bar"><i></i></div><span class="stepnum">4 of 5</span></div>
+    <p class="q">Will you be attending the event on December 17, 2026?</p>
+    <p class="qsub">We would love to have you with us!</p>
+    <div class="choices three" role="radiogroup" aria-label="Attendance">
+      <button class="choice" data-k="attending" data-v="Yes" role="radio"><span class="ic">🎄</span>Yes<small>Count me in</small></button>
+      <button class="choice" data-k="attending" data-v="No" role="radio"><span class="ic">💌</span>No<small>Can't make it</small></button>
+      <button class="choice" data-k="attending" data-v="Maybe" role="radio"><span class="ic">✨</span>Maybe<small>Hoping to</small></button>
+    </div>
+    <div class="err" id="err-attending"></div>
+  </section>
+
+  <!-- 5. Guests -->
+  <section class="screen" id="s-5">
+    <div class="progress"><button class="btn btn-ghost back" onclick="go(4)">← Back</button><div class="bar"><i></i></div><span class="stepnum">5 of 5</span></div>
+    <p class="q">Including yourself, how many guests will be attending?</p>
+    <p class="qsub">Select one.</p>
+    <div class="choices four" role="radiogroup" aria-label="Number of guests">
+      <button class="choice" data-k="guests" data-v="1" role="radio">1</button>
+      <button class="choice" data-k="guests" data-v="2" role="radio">2</button>
+      <button class="choice" data-k="guests" data-v="3" role="radio">3</button>
+      <button class="choice" data-k="guests" data-v="4" role="radio">4</button>
+    </div>
+    <div class="err" id="err-guests"></div>
+  </section>
+
+  <!-- 6. Review -->
+  <section class="screen" id="s-6">
+    <div class="progress"><button class="btn btn-ghost back" id="reviewBack">← Back</button><div class="bar"><i style="width:100%"></i></div><span class="stepnum">Review</span></div>
+    <p class="q">Look good?</p>
+    <p class="qsub">Confirm your details to send your RSVP.</p>
+    <div class="review" id="review"></div>
+    <button class="btn btn-primary" onclick="submitRSVP()">Send RSVP</button>
+  </section>
+
+  <!-- 7. Finale -->
+  <section class="screen" id="s-done">
+    <div class="merry">Merry Christmas</div>
+    <p class="merry2" id="doneName"></p>
+    <p class="lede" id="doneMsg"></p>
+    <div class="chips" id="chips"></div>
+    <div class="cal-row" id="calRow">
+      <button class="btn btn-primary btn-cal" id="calBtn" onclick="addToCalendar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>
+        Add to Calendar
+      </button>
+      <div class="toast" id="calToast"></div>
+      <div class="alt">Or add to <a id="gcal" target="_blank" rel="noopener">Google Calendar</a> · <a id="ocal" target="_blank" rel="noopener">Outlook</a><span id="icsAlt"> · <a href="#" onclick="event.preventDefault();downloadIcs()">Apple / .ics</a></span></div>
+    </div>
+    <button class="btn btn-ghost" style="margin-top:14px" onclick="restart()">Edit my response</button>
+  </section>
+</main>
+<p class="footer">EZScript · Christmas Celebrations · Newport Beach, CA</p>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIGURATION — paste your Google Apps Script Web App URL below.
+   See README.md → "1. Set up the Google Sheet". Leave empty to run
+   without saving (events are printed to the browser console instead).
+   ===================================================================== */
+const CONFIG = {
+  ENDPOINT: "https://script.google.com/macros/s/AKfycbxQ-x8hEVMCzkBHM8EweFLYIdjK_Ttm-SyE8ZJBwxUMAX3jcdkCh1NiwmGyC6D0UFUhwA/exec",
+  EVENT_ID: "ezscript-christmas-2026"
+};
+
+/* ---------- State ---------- */
+const data = { name:"", email:"", phone:"", attending:"", guests:"" };
+const UA = navigator.userAgent || "";
+const OS = (/iPad|iPhone|iPod/.test(UA) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1)) ? "ios"
+         : /Android/i.test(UA) ? "android" : /Macintosh|Mac OS X/.test(UA) ? "mac" : /Windows/i.test(UA) ? "windows" : "other";
+const FINE_POINTER = matchMedia("(pointer:fine)").matches;
+/* ---------- Tracking ---------- */
+const QS = new URLSearchParams(location.search);
+const INVITE = (QS.get("invite") || QS.get("i") || "").replace(/[^\w.\-@]/g,"").slice(0,64);
+const rid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10);
+const store = {
+  get(k, s=localStorage){ try{ return s.getItem(k); }catch(e){ return null; } },
+  set(k, v, s=localStorage){ try{ s.setItem(k, v); }catch(e){} }
+};
+const VISITOR_ID = store.get("ez_vid") || (()=>{ const v=rid(); store.set("ez_vid",v); return v; })();
+const SESSION_ID = (()=>{ try{ let v=sessionStorage.getItem("ez_sid"); if(!v){ v=rid(); sessionStorage.setItem("ez_sid",v);} return v; }catch(e){ return rid(); } })();
+function clientInfo(){
+  const ua = navigator.userAgent || "";
+  const isTablet = /iPad|Tablet/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua)) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  const browser = /Edg\//.test(ua) ? "Edge" : /SamsungBrowser/.test(ua) ? "Samsung Internet" : /CriOS|Chrome\//.test(ua) ? "Chrome"
+                : /FxiOS|Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Other";
+  let tz=""; try{ tz = Intl.DateTimeFormat().resolvedOptions().timeZone; }catch(e){}
+  return { os: OS, device: isTablet ? "tablet" : /Mobi|iPhone|Android/i.test(ua) ? "mobile" : "desktop", browser,
+           screen: `${screen.width}x${screen.height}`, language: navigator.language || "", timezone: tz };
+}
+function basePayload(){
+  return { eventId: CONFIG.EVENT_ID, visitorId: VISITOR_ID, sessionId: SESSION_ID, invite: INVITE,
+           clientTs: new Date().toISOString(), url: location.href.split("#")[0], referrer: document.referrer || "", ...clientInfo() };
+}
+function post(body){
+  if (!CONFIG.ENDPOINT){ console.info("[RSVP tracking — no ENDPOINT configured]", body); return Promise.resolve(); }
+  // text/plain + no-cors = "simple" request: no CORS preflight, works with Apps Script web apps
+  return fetch(CONFIG.ENDPOINT, { method:"POST", mode:"no-cors", keepalive:true,
+    headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+}
+function track(event, detail){
+  post({ type:"event", event, detail: detail==null ? "" : String(detail), step: order[current] || "", email: data.email || "", ...basePayload() }).catch(()=>{});
+}
+/* RSVPs are queued in localStorage until the network call succeeds, so a flaky mobile connection never loses a response */
+const QUEUE_KEY = "ez_rsvp_queue";
+function readQueue(){ try{ return JSON.parse(store.get(QUEUE_KEY) || "[]"); }catch(e){ return []; } }
+function writeQueue(q){ store.set(QUEUE_KEY, JSON.stringify(q)); }
+let flushing = false;
+async function flushQueue(){
+  if (flushing) return; flushing = true;
+  try{
+    let q = readQueue();
+    while (q.length){
+      try{ await post(q[0]); q.shift(); writeQueue(q); }
+      catch(e){ break; } // offline — retry on next 'online' event / page load
+    }
+  } finally { flushing = false; }
+}
+function sendRSVP(rsvp){ const q = readQueue(); q.push(rsvp); writeQueue(q); return flushQueue(); }
+addEventListener("online", flushQueue);
+
+const IN_PREVIEW = !!(window.claude && typeof window.claude.use === "function") || /claude/i.test(location.hostname);
+const EVENT = {
+  title: "EZScript Christmas Party",
+  location: "Newport Beach, California",
+  description: "Christmas Celebrations with EZScript in Newport Beach, California. We would love to have you with us!",
+  start: "20261217", end: "20261218" // all-day event (exclusive end)
+};
+let current = 0;
+const order = ["s-invite","s-1","s-2","s-3","s-4","s-5","s-6","s-done"];
+
+function go(i){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  const el = document.getElementById(order[i]); el.classList.add("active"); current = i;
+  const bar = el.querySelector(".bar>i");
+  if (bar && i>=1 && i<=5){ bar.style.width = ((i-1)/5*100)+"%"; requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.width=(i/5*100)+"%")); }
+  const inp = el.querySelector("input.text"); if (inp && FINE_POINTER) setTimeout(()=>inp.focus({preventScroll:true}), 250);
+  if (i===6) renderReview();
+  if (i>=1 && i<=6) track("step_view", order[i]);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- Validation ---------- */
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+function setErr(id,msg){ if (msg) track("validation_error", id); document.getElementById("err-"+id).textContent = msg||""; const f=document.getElementById(id); if(f) f.classList.toggle("invalid",!!msg); }
+function validate(step){
+  if (step===1){ const v=document.getElementById("name").value.trim().replace(/\s+/g," ");
+    if (v.length<2){ setErr("name","Please enter your name."); return false; } data.name=v; setErr("name"); }
+  if (step===2){ const v=document.getElementById("email").value.trim();
+    if (!v){ setErr("email","Please enter your email address."); return false; }
+    if (!EMAIL_RE.test(v)){ setErr("email","Please enter a valid email, e.g. name@company.com"); return false; }
+    data.email=v; setErr("email"); }
+  if (step===3){ const v=document.getElementById("phone").value;
+    if (!/^\d+$/.test(v)){ setErr("phone","Please enter your phone number using numbers only."); return false; }
+    if (v.length<10){ setErr("phone","Phone number should be at least 10 digits."); return false; }
+    data.phone=v; setErr("phone"); }
+  return true;
+}
+function next(step){ if (validate(step)) go(step+1); }
+
+/* numbers-only phone: strip anything that isn't a digit as the user types or pastes */
+const phone = document.getElementById("phone");
+phone.addEventListener("input", ()=>{ const c=phone.value.replace(/\D/g,""); if (c!==phone.value){ phone.value=c; setErr("phone","Numbers only, please."); } else if (document.getElementById("err-phone").textContent==="Numbers only, please.") setErr("phone"); });
+phone.addEventListener("beforeinput", e=>{ if (e.data && /\D/.test(e.data) && e.inputType==="insertText") e.preventDefault(); });
+
+/* keep focused field visible above the on-screen keyboard */
+document.querySelectorAll("input.text").forEach(i=>i.addEventListener("focus",()=>{ if(!FINE_POINTER) setTimeout(()=>i.scrollIntoView({block:"center",behavior:"smooth"}),300); }));
+/* live clear errors */
+["name","email"].forEach(id=>document.getElementById(id).addEventListener("input",()=>setErr(id)));
+/* Enter advances */
+[["name",1],["email",2],["phone",3]].forEach(([id,s])=>document.getElementById(id).addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();next(s);} }));
+
+/* ---------- Choice buttons ---------- */
+document.querySelectorAll(".choice").forEach(b=>b.addEventListener("click",()=>{
+  const k=b.dataset.k, v=b.dataset.v;
+  b.parentElement.querySelectorAll(".choice").forEach(x=>{x.classList.remove("sel");x.setAttribute("aria-checked","false");});
+  b.classList.add("sel"); b.setAttribute("aria-checked","true"); data[k]=v; track("answer", k+"="+v);
+  setTimeout(()=>{
+    if (k==="attending"){ if (v==="No"){ data.guests=""; go(6); } else go(5); }
+    else go(6);
+  }, 320);
+}));
+
+/* ---------- Review ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function renderReview(){
+  const rows = [["Name",data.name,1],["Email",data.email,2],["Phone",data.phone,3],["Attending",data.attending,4]];
+  if (data.attending!=="No") rows.push(["Guests (incl. you)",data.guests,5]);
+  document.getElementById("review").innerHTML = rows.map(([l,v,s])=>`<div><span>${l}</span><b>${esc(v)}<a onclick="go(${s})">Edit</a></b></div>`).join("");
+  document.getElementById("reviewBack").onclick = ()=>go(data.attending==="No"?4:5);
+}
+
+/* ---------- Submit + finale ---------- */
+function submitRSVP(){
+  // Prototype: RSVP payload is assembled here. Wire to backend / CRM endpoint for production.
+  const hp = (document.getElementById("website")||{}).value || "";
+  const payload = { type:"rsvp", name:data.name, email:data.email, phone:data.phone, attending:data.attending,
+                    guests: data.attending==="No" ? "" : data.guests, hp, ...basePayload() };
+  window.__lastRSVP = payload;
+  sendRSVP(payload);
+
+  const first = data.name.split(" ")[0];
+  document.getElementById("doneName").textContent = `Thank you, ${first}!`;
+  const msg = { Yes:"Your RSVP is confirmed. We can't wait to celebrate with you in Newport Beach on December 17.",
+                Maybe:"Thanks for letting us know — we'll keep a spot warm for you. We hope to see you on December 17!",
+                No:"We'll miss you this year! Thank you for being part of the EZScript family — wishing you a joyful holiday season." }[data.attending];
+  document.getElementById("doneMsg").textContent = msg;
+  const chips = [`📅 Thu, Dec 17, 2026`,`📍 Newport Beach, CA`,`RSVP: ${data.attending}`];
+  if (data.attending!=="No") chips.push(`👥 ${data.guests} ${data.guests==="1"?"guest":"guests"}`);
+  document.getElementById("chips").innerHTML = chips.map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+  document.getElementById("calRow").style.display = data.attending==="No" ? "none" : "flex";
+  document.getElementById("calToast").textContent = "";
+  go(7);
+  startFireworks();
+}
+function restart(){ track("edit_response"); stopFireworks(); go(1); }
+function startRSVP(){ track("rsvp_started"); go(1); }
+
+/* ---------- Add to Calendar ---------- */
+function icsText(){
+  const now = new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+  const uid = "ezscript-christmas-2026-" + Math.random().toString(36).slice(2) + "@ezscript.com";
+  const escI = s=>s.replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+  return [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//EZScript//Christmas Party 2026//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH",
+    "BEGIN:VEVENT",`UID:${uid}`,`DTSTAMP:${now}`,
+    `DTSTART;VALUE=DATE:${EVENT.start}`,`DTEND;VALUE=DATE:${EVENT.end}`,
+    `SUMMARY:${escI(EVENT.title)}`,`LOCATION:${escI(EVENT.location)}`,`DESCRIPTION:${escI(EVENT.description)}`,
+    "STATUS:CONFIRMED","TRANSP:TRANSPARENT",
+    "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:EZScript Christmas Party tomorrow","TRIGGER:-P1D","END:VALARM",
+    "END:VEVENT","END:VCALENDAR"
+  ].join("\r\n");
+}
+const toast = m => document.getElementById("calToast").textContent = m;
+async function addToCalendar(){
+  track("calendar_add", OS==="android" ? "google" : OS==="ios" ? "ios-native" : "ics");
+  const ics = icsText(), filename = "EZScript-Christmas-Party.ics";
+  // Inside the claude.ai preview frame, file downloads (.ics) are blocked — the button
+  // is rewired to Google Calendar there (see calLinks). Standalone/hosted: native .ics below.
+  if (IN_PREVIEW) return;
+  if (OS==="android"){ const w = window.open(GCAL_URL,"_blank","noopener"); if(!w) location.href = GCAL_URL; return; }          // Android: Google Calendar app/web
+  if (OS==="ios"){                                                   // iOS: native "Add to Calendar" sheet
+    location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    toast("Tap “Add All” to save it to your Calendar."); return;
+  }
+  try{                                                               // macOS / Windows / Linux: .ics → Calendar / Outlook
+    const blob = new Blob([ics],{type:"text/calendar;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    toast("Calendar invite downloaded — open it to add to your calendar.");
+  }catch(e){ toast("Couldn't create the invite here — use Google Calendar or Outlook below."); }
+}
+let GCAL_URL = "";
+function downloadIcs(){ track("calendar_add","ics-link"); try{ const blob=new Blob([icsText()],{type:"text/calendar;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="EZScript-Christmas-Party.ics"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); toast("Calendar invite downloaded — open it to add to your calendar."); }catch(e){} }
+(function calLinks(){
+  const g = new URL("https://calendar.google.com/calendar/render");
+  g.search = new URLSearchParams({action:"TEMPLATE",text:EVENT.title,dates:`${EVENT.start}/${EVENT.end}`,location:EVENT.location,details:EVENT.description});
+  document.getElementById("gcal").href = g.toString(); GCAL_URL = g.toString();
+  const o = new URL("https://outlook.live.com/calendar/0/deeplink/compose");
+  o.search = new URLSearchParams({subject:EVENT.title,startdt:"2026-12-17",enddt:"2026-12-18",allday:"true",location:EVENT.location,body:EVENT.description,path:"/calendar/action/compose",rru:"addevent"});
+  document.getElementById("ocal").href = o.toString();
+  document.getElementById("gcal").addEventListener("click",()=>track("calendar_add","google-link"));
+  document.getElementById("ocal").addEventListener("click",()=>track("calendar_add","outlook-link"));
+  if (OS==="ios"||OS==="android"||IN_PREVIEW) document.getElementById("icsAlt").style.display="none";
+  if (IN_PREVIEW){ // preview frame: make the main button a real link out to Google Calendar
+    const btn = document.getElementById("calBtn"), a = document.createElement("a");
+    a.className = btn.className; a.innerHTML = btn.innerHTML; a.id = "calBtn";
+    a.href = g.toString(); a.target = "_blank"; a.rel = "noopener"; a.style.textDecoration = "none";
+    a.onclick = ()=>toast("Opening Google Calendar…");
+    btn.replaceWith(a);
+    document.querySelector(".alt").innerHTML = 'Or add to <a href="'+o.toString().replace(/"/g,"&quot;")+'" target="_blank" rel="noopener">Outlook</a>';
+  }
+})();
+
+/* ---------- String-light bulbs ---------- */
+(function(){
+  const g=document.getElementById("bulbs"), cols=["#E8C468","#C8323C","#1DB954","#FFFFFF","#4FA9E0"]; let h="";
+  for(let i=0;i<=24;i++){ const x=i*50, t=(x%300)/300, y= 8 + 4*36*t*(1-t) + 4;
+    h+=`<circle class="bulb" cx="${x}" cy="${y+4}" r="3.6" fill="${cols[i%5]}" style="animation-delay:${(i*0.37)%2.4}s;filter:drop-shadow(0 0 5px ${cols[i%5]})"/>`; }
+  g.innerHTML=h;
+})();
+
+/* ---------- Snow ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+(function snow(){
+  const c=document.getElementById("snow"), x=c.getContext("2d"); let W,H,flakes=[];
+  function size(){ const d=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight; c.width=W*d; c.height=H*d; x.setTransform(d,0,0,d,0,0); }
+  size(); addEventListener("resize",size);
+  const N = reduce?40:Math.min(140, Math.round(innerWidth/9));
+  for(let i=0;i<N;i++) flakes.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.2+0.6,s:Math.random()*0.6+0.25,d:Math.random()*Math.PI*2});
+  (function loop(){
+    x.clearRect(0,0,W,H); x.fillStyle="rgba(255,255,255,.75)";
+    for(const f of flakes){ f.y+=f.s; f.d+=0.01; f.x+=Math.sin(f.d)*0.35; if(f.y>H+5){f.y=-5;f.x=Math.random()*W;}
+      x.beginPath(); x.arc(f.x,f.y,f.r,0,Math.PI*2); x.fill(); }
+    if(!reduce) requestAnimationFrame(loop);
+  })();
+})();
+
+/* ---------- Fireworks ---------- */
+const fx=document.getElementById("fx"), fc=fx.getContext("2d");
+let FW, FH, rockets=[], sparks=[], fwRunning=false, fwStart=0, fwRAF=0, lastLaunch=0;
+function fxSize(){ const d=Math.min(devicePixelRatio||1,2); FW=innerWidth; FH=innerHeight; fx.width=FW*d; fx.height=FH*d; fc.setTransform(d,0,0,d,0,0); }
+fxSize(); addEventListener("resize",fxSize);
+const PALETTE=[["#1DB954","#7CF0A6"],["#E8C468","#FFF1B8"],["#C8323C","#FF8A8F"],["#FFFFFF","#DDEBFF"],["#4FA9E0","#B6E2FF"],["#16B14B","#E8C468"]];
+function launch(){
+  const x = FW*(0.15+Math.random()*0.7);
+  const ty = FH*(0.12+Math.random()*0.33);
+  rockets.push({x, y:FH, vx:(Math.random()-.5)*1.2, vy:-(Math.sqrt(2*0.09*(FH-ty))), ty, col:PALETTE[Math.floor(Math.random()*PALETTE.length)], trail:[]});
+}
+function burst(r){
+  const n = reduce?40:Math.round((90+Math.random()*50)*(FW<600?0.65:1)), ring=Math.random()<.3;
+  for(let i=0;i<n;i++){
+    const a = (i/n)*Math.PI*2 + Math.random()*0.05, sp = (ring ? 4.2 : Math.random()*4.6+0.8)*(FW<600?0.75:1);
+    sparks.push({x:r.x,y:r.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,decay:0.009+Math.random()*0.012,col:Math.random()<.7?r.col[0]:r.col[1],sz:Math.random()*1.6+1.1,tw:Math.random()<.35});
+  }
+}
+function fwLoop(t){
+  const elapsed = t - fwStart;
+  // intense show for ~7s, then gentle celebratory bursts
+  const gap = elapsed < 7000 ? 260 : 1400;
+  if (fwRunning && t-lastLaunch > gap){ launch(); if (elapsed<7000 && Math.random()<.45) launch(); lastLaunch=t; }
+  fc.globalCompositeOperation="destination-out"; fc.fillStyle="rgba(0,0,0,.22)"; fc.fillRect(0,0,FW,FH);
+  fc.globalCompositeOperation="lighter";
+  for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i];
+    r.x+=r.vx; r.y+=r.vy; r.vy+=0.09;
+    fc.fillStyle=r.col[1]; fc.beginPath(); fc.arc(r.x,r.y,2,0,Math.PI*2); fc.fill();
+    if (r.vy>=-0.5 || r.y<=r.ty){ burst(r); rockets.splice(i,1); } }
+  for(let i=sparks.length-1;i>=0;i--){ const p=sparks[i];
+    p.vx*=0.985; p.vy=p.vy*0.985+0.045; p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
+    if(p.life<=0){ sparks.splice(i,1); continue; }
+    const a = p.tw ? p.life*(0.5+0.5*Math.sin(t/40+i)) : p.life;
+    fc.globalAlpha=Math.max(0,a); fc.fillStyle=p.col; fc.beginPath(); fc.arc(p.x,p.y,p.sz,0,Math.PI*2); fc.fill(); }
+  fc.globalAlpha=1;
+  if (fwRunning || rockets.length || sparks.length) fwRAF=requestAnimationFrame(fwLoop);
+  else fc.clearRect(0,0,FW,FH);
+}
+function startFireworks(){
+  cancelAnimationFrame(fwRAF); fwRunning=true; fwStart=performance.now(); lastLaunch=0;
+  for(let i=0;i<3;i++) setTimeout(launch, i*120);
+  fwRAF=requestAnimationFrame(fwLoop);
+  if (reduce) setTimeout(()=>fwRunning=false, 3000);
+}
+function stopFireworks(){ fwRunning=false; }
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) fwRunning=false; });
+
+/* ---------- Boot ---------- */
+(function boot(){
+  // Personalised links: ?invite=ACME-001&name=Jane%20Doe&email=jane@acme.com
+  const n = (QS.get("name")||"").slice(0,80), e = (QS.get("email")||"").slice(0,120);
+  if (n) document.getElementById("name").value = n;
+  if (e) document.getElementById("email").value = e;
+  track("page_view", INVITE ? "invite:"+INVITE : "");
+  flushQueue();
+})();
+</script>
+</body>
+</html>
