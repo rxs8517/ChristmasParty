@@ -1,0 +1,23 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//EZScript//Christmas Party 2026//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:EZScript Christmas Party
+BEGIN:VEVENT
+UID:ezscript-christmas-party-2026@ezscript.com
+DTSTAMP:20261117T000000Z
+DTSTART;VALUE=DATE:20261217
+DTEND;VALUE=DATE:20261218
+SUMMARY:EZScript Christmas Party
+LOCATION:Newport Beach\, California
+DESCRIPTION:Christmas Celebrations with EZScript in Newport Beach\, California. We would love to have you with us!
+STATUS:CONFIRMED
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:EZScript Christmas Party tomorrow
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+END:VCALENDAR

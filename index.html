@@ -113,6 +113,9 @@
   .alt{font-size:12.5px;color:var(--muted)}
   .alt a{color:var(--deep);font-weight:600;text-decoration:none}
   .toast{font-size:13px;color:var(--deep);min-height:18px}
+  #dbg{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);z-index:50;max-height:34vh;overflow:hidden;pointer-events:none;
+    background:rgba(8,16,24,.94);color:#cfe3f1;font:12px/1.5 ui-monospace,Menlo,monospace;padding:10px 12px;border-radius:12px;border:1px solid #2b4b63}
+  #dbg .dbg-good{color:#7CF0A6} #dbg .dbg-bad{color:#FF8A8F} #dbg .dbg-warn{color:#FFD27A}
   .footer{position:relative;z-index:2;text-align:center;color:rgba(255,255,255,.55);font-size:12px;margin-top:18px}
   .wrap{width:100%;max-width:540px}
 
@@ -283,24 +286,21 @@
         Add to Calendar
       </button>
       <div class="toast" id="calToast"></div>
-      <div class="alt">Or add to <a id="gcal" target="_blank" rel="noopener">Google Calendar</a> · <a id="ocal" target="_blank" rel="noopener">Outlook</a><span id="icsAlt"> · <a href="#" onclick="event.preventDefault();downloadIcs()">Apple / .ics</a></span></div>
+      <div class="alt">Or add to <a id="gcal" target="_blank" rel="noopener">Google Calendar</a> · <a id="ocal" target="_blank" rel="noopener">Outlook</a><span id="icsAlt"> · <a href="ezscript-christmas-party.ics" onclick="event.preventDefault();downloadIcs()">Apple Calendar</a></span></div>
     </div>
     <button class="btn btn-ghost" style="margin-top:14px" onclick="restart()">Edit my response</button>
   </section>
 </main>
 <p class="footer">EZScript · Christmas Celebrations · Newport Beach, CA</p>
 </div>
+<div id="dbg" hidden></div>
 
+<!-- Your Google Sheet link lives in config.js (replacing index.html never wipes it) -->
+<script src="config.js"></script>
 <script>
-/* =====================================================================
-   CONFIGURATION — paste your Google Apps Script Web App URL below.
-   See README.md → "1. Set up the Google Sheet". Leave empty to run
-   without saving (events are printed to the browser console instead).
-   ===================================================================== */
-const CONFIG = {
-  ENDPOINT: "",
-  EVENT_ID: "ezscript-christmas-2026"
-};
+const CONFIG = Object.assign({ ENDPOINT: "", EVENT_ID: "ezscript-christmas-2026" }, window.RSVP_CONFIG || {});
+CONFIG.ENDPOINT = String(CONFIG.ENDPOINT || "").trim();
+const DEBUG = /[?&]debug\b/.test(location.search);
 
 /* ---------- State ---------- */
 const data = { name:"", email:"", phone:"", attending:"", guests:"" };
@@ -331,14 +331,56 @@ function basePayload(){
   return { eventId: CONFIG.EVENT_ID, visitorId: VISITOR_ID, sessionId: SESSION_ID, invite: INVITE,
            clientTs: new Date().toISOString(), url: location.href.split("#")[0], referrer: document.referrer || "", ...clientInfo() };
 }
-function post(body){
-  if (!CONFIG.ENDPOINT){ console.info("[RSVP tracking — no ENDPOINT configured]", body); return Promise.resolve(); }
-  // text/plain + no-cors = "simple" request: no CORS preflight, works with Apps Script web apps
-  return fetch(CONFIG.ENDPOINT, { method:"POST", mode:"no-cors", keepalive:true,
-    headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+/* Sends JSON as text/plain (a CORS "simple" request: no preflight). Apps Script answers with
+   {ok:true} or {ok:false,error}. Resolves with that answer; rejects only when offline. */
+async function post(body, opts={}){
+  if (!CONFIG.ENDPOINT){ dbg("✗ Nothing is being saved — ENDPOINT is empty in config.js", "bad"); return { ok:false, error:"no_endpoint" }; }
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/.test(CONFIG.ENDPOINT))
+    dbg("⚠ ENDPOINT should look like https://script.google.com/macros/s/…/exec (not /dev, not the editor URL)", "warn");
+  const init = { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(body), redirect:"follow", keepalive: !!opts.keepalive };
+  const label = body.type==="rsvp" ? "RSVP " + body.email : body.event;
+  try{
+    const r = await fetch(CONFIG.ENDPOINT, init);
+    const t = await r.text(); let j;
+    try{ j = JSON.parse(t); }catch(e){ j = { ok:false, error: /<html|<!doctype/i.test(t) ? "html_response (deployment access is probably not 'Anyone', or URL is wrong)" : "non_json_response", status:r.status }; }
+    dbg((j.ok ? "✓ " : "✗ ") + label + (j.ok ? " saved" : " — server said: " + j.error), j.ok ? "good" : "bad");
+    return j;
+  }catch(e){
+    if (navigator.onLine === false) throw e;          // offline → caller keeps it queued
+    // CORS-blocked response: usually Google bounced the request to a sign-in page
+    // ("Who has access" is not "Anyone"). Fire a blind copy so a working-but-unreadable setup still records it.
+    try{ await fetch(CONFIG.ENDPOINT, { ...init, mode:"no-cors" }); }catch(e2){ throw e2; }
+    dbg("? " + label + " sent, but the response was blocked — check the web app's \"Who has access\" = Anyone, then redeploy", "warn");
+    return { ok:true, opaque:true };
+  }
 }
 function track(event, detail){
-  post({ type:"event", event, detail: detail==null ? "" : String(detail), step: order[current] || "", email: data.email || "", ...basePayload() }).catch(()=>{});
+  post({ type:"event", event, detail: detail==null ? "" : String(detail), step: order[current] || "", email: data.email || "", ...basePayload() }, { keepalive:true }).catch(()=>{});
+}
+/* ---------- Diagnostics panel: add ?debug to the URL ---------- */
+function dbg(msg, kind){
+  console[kind==="bad"?"warn":"info"]("[RSVP]", msg);
+  if (!DEBUG) return;
+  if (dbg.seen.has(msg)) return; dbg.seen.add(msg);
+  const p = document.getElementById("dbg"); p.hidden = false;
+  while (p.children.length >= 12) p.firstChild.remove();
+  const row = document.createElement("div"); row.className = "dbg-" + (kind||"info");
+  row.textContent = new Date().toLocaleTimeString() + "  " + msg; p.appendChild(row); p.scrollTop = p.scrollHeight;
+}
+dbg.seen = new Set();
+async function diagnostics(){
+  if (!DEBUG) return;
+  dbg("Diagnostics on. config.js loaded: " + (window.RSVP_CONFIG ? "yes" : "NO — config.js missing or not uploaded"), window.RSVP_CONFIG ? "good" : "bad");
+  dbg("ENDPOINT: " + (CONFIG.ENDPOINT || "(empty)"), CONFIG.ENDPOINT ? "info" : "bad");
+  dbg("Device: " + OS + " · " + navigator.userAgent.slice(0,90), "info");
+  if (!CONFIG.ENDPOINT) return;
+  try{
+    const r = await fetch(CONFIG.ENDPOINT + (CONFIG.ENDPOINT.includes("?")?"&":"?") + "ping=1");
+    const t = await r.text(); let j = null; try{ j = JSON.parse(t); }catch(e){}
+    if (j && j.ok) dbg("✓ Backend reachable · Sheet: " + (j.sheet || "?") + " · RSVP rows: " + (j.rsvps ?? "?"), "good");
+    else if (j) dbg("✗ Backend error: " + j.error, "bad");
+    else dbg("✗ Backend returned a web page, not JSON — set 'Who has access' to Anyone and deploy a New version", "bad");
+  }catch(e){ dbg("✗ Backend not reachable from the browser (CORS/sign-in). Set 'Execute as: Me' and 'Who has access: Anyone', then Deploy → New version", "bad"); }
 }
 /* RSVPs are queued in localStorage until the network call succeeds, so a flaky mobile connection never loses a response */
 const QUEUE_KEY = "ez_rsvp_queue";
@@ -350,8 +392,11 @@ async function flushQueue(){
   try{
     let q = readQueue();
     while (q.length){
-      try{ await post(q[0]); q.shift(); writeQueue(q); }
+      let res;
+      try{ res = await post(q[0]); }
       catch(e){ break; } // offline — retry on next 'online' event / page load
+      if (res && res.error === "no_endpoint") break;   // keep it until config.js is fixed
+      q.shift(); writeQueue(q);
     }
   } finally { flushing = false; }
 }
@@ -458,7 +503,7 @@ function startRSVP(){ track("rsvp_started"); go(1); }
 /* ---------- Add to Calendar ---------- */
 function icsText(){
   const now = new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
-  const uid = "ezscript-christmas-2026-" + Math.random().toString(36).slice(2) + "@ezscript.com";
+  const uid = "ezscript-christmas-party-2026@ezscript.com";   // fixed UID: re-adding updates instead of duplicating
   const escI = s=>s.replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
   return [
     "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//EZScript//Christmas Party 2026//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH",
@@ -471,6 +516,11 @@ function icsText(){
   ].join("\r\n");
 }
 const toast = m => document.getElementById("calToast").textContent = m;
+/* The invite is a real file in the repo (ezscript-christmas-party.ics). GitHub Pages serves it
+   as text/calendar, which iOS/macOS Safari hand straight to Apple Calendar ("Add to Calendar").
+   iOS blocks data:/blob: calendar files, which is why a hosted file is used. */
+const ICS_FILE = "ezscript-christmas-party.ics";
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|LinkedInApp|GSA\/|Line\/|MicroMessenger|Outlook-iOS|; wv\)/i.test(UA);
 async function addToCalendar(){
   track("calendar_add", OS==="android" ? "google" : OS==="ios" ? "ios-native" : "ics");
   const ics = icsText(), filename = "EZScript-Christmas-Party.ics";
@@ -478,11 +528,18 @@ async function addToCalendar(){
   // is rewired to Google Calendar there (see calLinks). Standalone/hosted: native .ics below.
   if (IN_PREVIEW) return;
   if (OS==="android"){ const w = window.open(GCAL_URL,"_blank","noopener"); if(!w) location.href = GCAL_URL; return; }          // Android: Google Calendar app/web
-  if (OS==="ios"){                                                   // iOS: native "Add to Calendar" sheet
-    location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-    toast("Tap “Add All” to save it to your Calendar."); return;
+  if (location.protocol !== "file:"){
+    if (OS==="ios"){                                                 // iOS: Safari shows the native Calendar sheet
+      location.href = new URL(ICS_FILE, location.href).href;
+      toast(IN_APP_BROWSER ? "If nothing opens, tap ••• → Open in Safari, or use Google Calendar below."
+                           : "Tap “Add to Calendar” in the prompt.");
+      return;
+    }
+    const a = document.createElement("a"); a.href = ICS_FILE; a.download = filename;   // macOS / Windows: Calendar / Outlook
+    document.body.appendChild(a); a.click(); a.remove();
+    toast("Calendar invite downloaded — open it to add to your calendar."); return;
   }
-  try{                                                               // macOS / Windows / Linux: .ics → Calendar / Outlook
+  try{                                                               // local file:// testing fallback
     const blob = new Blob([ics],{type:"text/calendar;charset=utf-8"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
@@ -491,7 +548,10 @@ async function addToCalendar(){
   }catch(e){ toast("Couldn't create the invite here — use Google Calendar or Outlook below."); }
 }
 let GCAL_URL = "";
-function downloadIcs(){ track("calendar_add","ics-link"); try{ const blob=new Blob([icsText()],{type:"text/calendar;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="EZScript-Christmas-Party.ics"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); toast("Calendar invite downloaded — open it to add to your calendar."); }catch(e){} }
+function downloadIcs(){ track("calendar_add","ics-link");
+  if (location.protocol !== "file:"){ if (OS==="ios"){ location.href = new URL(ICS_FILE, location.href).href; return; }
+    const a=document.createElement("a"); a.href=ICS_FILE; a.download="EZScript-Christmas-Party.ics"; document.body.appendChild(a); a.click(); a.remove(); toast("Calendar invite downloaded — open it to add to your calendar."); return; }
+  try{ const blob=new Blob([icsText()],{type:"text/calendar;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="EZScript-Christmas-Party.ics"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); toast("Calendar invite downloaded — open it to add to your calendar."); }catch(e){} }
 (function calLinks(){
   const g = new URL("https://calendar.google.com/calendar/render");
   g.search = new URLSearchParams({action:"TEMPLATE",text:EVENT.title,dates:`${EVENT.start}/${EVENT.end}`,location:EVENT.location,details:EVENT.description});
@@ -501,7 +561,7 @@ function downloadIcs(){ track("calendar_add","ics-link"); try{ const blob=new Bl
   document.getElementById("ocal").href = o.toString();
   document.getElementById("gcal").addEventListener("click",()=>track("calendar_add","google-link"));
   document.getElementById("ocal").addEventListener("click",()=>track("calendar_add","outlook-link"));
-  if (OS==="ios"||OS==="android"||IN_PREVIEW) document.getElementById("icsAlt").style.display="none";
+  if (OS==="android"||IN_PREVIEW) document.getElementById("icsAlt").style.display="none";
   if (IN_PREVIEW){ // preview frame: make the main button a real link out to Google Calendar
     const btn = document.getElementById("calBtn"), a = document.createElement("a");
     a.className = btn.className; a.innerHTML = btn.innerHTML; a.id = "calBtn";
@@ -589,6 +649,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.hidden) fwRunning
   const n = (QS.get("name")||"").slice(0,80), e = (QS.get("email")||"").slice(0,120);
   if (n) document.getElementById("name").value = n;
   if (e) document.getElementById("email").value = e;
+  diagnostics();
   track("page_view", INVITE ? "invite:"+INVITE : "");
   flushQueue();
 })();

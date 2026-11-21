@@ -16,6 +16,8 @@
 const NOTIFY_EMAIL = "";                 // e.g. "events@ezscript.com" — emails you on every new RSVP. Leave "" to disable.
 const TIMEZONE     = "America/Los_Angeles";
 const EVENT_ID     = "ezscript-christmas-2026";
+const SPREADSHEET_ID = "";               // Only needed if this script was NOT created from the Sheet (Extensions → Apps Script).
+                                         // Paste the ID from the Sheet URL: docs.google.com/spreadsheets/d/<THIS PART>/edit
 
 // ---- Sheet layout ---------------------------------------------------------
 const RSVP_SHEET = "RSVPs";
@@ -31,8 +33,17 @@ const ALLOWED_EVENTS = ["page_view", "rsvp_started", "step_view", "validation_er
   "calendar_add", "edit_response", "rsvp_submitted"];
 
 // ---- Web app entry points -------------------------------------------------
+/** Health check — open the /exec URL in a browser; the page's ?debug mode calls this too. */
 function doGet() {
-  return json_({ ok: true, service: "EZScript RSVP", event: EVENT_ID });
+  try {
+    const ss = getSpreadsheet_();
+    ensureSheets_(ss);
+    return json_({ ok: true, service: "EZScript RSVP", event: EVENT_ID, sheet: ss.getName(),
+      rsvps: Math.max(0, ss.getSheetByName(RSVP_SHEET).getLastRow() - 1),
+      activity: Math.max(0, ss.getSheetByName(ACT_SHEET).getLastRow() - 1) });
+  } catch (err) {
+    return json_({ ok: false, error: String(err && err.message || err) });
+  }
 }
 
 function doPost(e) {
@@ -44,9 +55,9 @@ function doPost(e) {
   if (body.eventId && body.eventId !== EVENT_ID) return json_({ ok: false, error: "wrong_event" });
 
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    lock.waitLock(20000);
+    const ss = getSpreadsheet_();
     ensureSheets_(ss);
 
     if (body.type === "rsvp") {
@@ -61,15 +72,19 @@ function doPost(e) {
     } else {
       return json_({ ok: false, error: "unknown_type" });
     }
+  } catch (err) {
+    console.error(err);
+    return json_({ ok: false, error: String(err && err.message || err) });
   } finally {
-    lock.releaseLock();
+    try { lock.releaseLock(); } catch (e) {}
   }
   return json_({ ok: true });
 }
 
 // ---- One-time setup (run from the Apps Script editor) ---------------------
 function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet_();
+  PropertiesService.getScriptProperties().setProperty("SPREADSHEET_ID", ss.getId());
   ss.setSpreadsheetTimeZone(TIMEZONE);
   ensureSheets_(ss);
   const def = ss.getSheetByName("Sheet1");
@@ -77,7 +92,28 @@ function setup() {
   ss.setActiveSheet(ss.getSheetByName(SUM_SHEET));
 }
 
+/**
+ * Self-test — run this from the editor (select testWrite → Run).
+ * It writes a sample RSVP exactly like the website does. If it shows up in the RSVPs tab,
+ * the script side is fine and any problem is the deployment (access / URL / version).
+ */
+function testWrite() {
+  const res = doPost({ postData: { contents: JSON.stringify({
+    type: "rsvp", eventId: EVENT_ID, name: "Test Guest", email: "test.guest@example.com", phone: "9495550123",
+    attending: "Yes", guests: 2, invite: "TEST", os: "editor", device: "desktop", browser: "Apps Script",
+    visitorId: "test", sessionId: "test" }) } });
+  Logger.log(res.getContent());
+}
+
 // ---- Internals ------------------------------------------------------------
+function getSpreadsheet_() {
+  const active = SpreadsheetApp.getActiveSpreadsheet();       // works when the script is bound to the Sheet
+  if (active) return active;
+  const id = SPREADSHEET_ID || PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID");
+  if (!id) throw new Error("Script is not attached to a Sheet. Create it from the Sheet (Extensions → Apps Script) or set SPREADSHEET_ID in Code.gs.");
+  return SpreadsheetApp.openById(id);
+}
+
 function ensureSheets_(ss) {
   let r = ss.getSheetByName(RSVP_SHEET);
   if (!r) {
