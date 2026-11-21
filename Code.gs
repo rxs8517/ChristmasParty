@@ -18,6 +18,8 @@ const TIMEZONE     = "America/Los_Angeles";
 const EVENT_ID     = "ezscript-christmas-2026";
 const SPREADSHEET_ID = "";               // Only needed if this script was NOT created from the Sheet (Extensions → Apps Script).
                                          // Paste the ID from the Sheet URL: docs.google.com/spreadsheets/d/<THIS PART>/edit
+const ADMIN_KEY = "";                    // Password for admin.html (the RSVP dashboard). Use a long random phrase, e.g.
+                                         // "candy-cane-harbor-7319-reindeer". Leave "" to disable the dashboard.
 
 // ---- Sheet layout ---------------------------------------------------------
 const RSVP_SHEET = "RSVPs";
@@ -52,6 +54,7 @@ function doPost(e) {
   catch (err) { return json_({ ok: false, error: "invalid_json" }); }
 
   if (body.hp) return json_({ ok: true });                       // honeypot filled → bot; silently drop
+  if (body.type === "admin_list") return adminList_(body);        // dashboard (read-only, key-protected)
   if (body.eventId && body.eventId !== EVENT_ID) return json_({ ok: false, error: "wrong_event" });
 
   const lock = LockService.getScriptLock();
@@ -103,6 +106,43 @@ function testWrite() {
     attending: "Yes", guests: 2, invite: "TEST", os: "editor", device: "desktop", browser: "Apps Script",
     visitorId: "test", sessionId: "test" }) } });
   Logger.log(res.getContent());
+}
+
+// ---- Admin dashboard (admin.html) -----------------------------------------
+/** Returns all RSVPs + funnel counts. Requires ADMIN_KEY; locks out for 15 min after 8 wrong keys. */
+function adminList_(body) {
+  if (!ADMIN_KEY) return json_({ ok: false, error: "admin_disabled" });
+  const cache = CacheService.getScriptCache();
+  const fails = Number(cache.get("admin_fails") || 0);
+  if (fails >= 8) return json_({ ok: false, error: "locked" });
+  if (String(body.key || "") !== ADMIN_KEY) {
+    cache.put("admin_fails", String(fails + 1), 900);
+    Utilities.sleep(700);
+    return json_({ ok: false, error: "bad_key" });
+  }
+  try {
+    const ss = getSpreadsheet_();
+    ensureSheets_(ss);
+    const iso = function (v) { return v instanceof Date ? v.toISOString() : (v || ""); };
+    const rs = ss.getSheetByName(RSVP_SHEET), n = rs.getLastRow() - 1;
+    const rsvps = n > 0 ? rs.getRange(2, 1, n, RSVP_HEADERS.length).getValues().map(function (r) {
+      return { email: r[0], name: r[1], phone: String(r[2]), attending: r[3], guests: r[4] === "" ? "" : Number(r[4]),
+        invite: r[5], firstSubmitted: iso(r[6]), lastUpdated: iso(r[7]), times: Number(r[8]) || 1,
+        os: r[9], device: r[10], browser: r[11] };
+    }) : [];
+    // Funnel: unique visitors per event
+    const as = ss.getSheetByName(ACT_SHEET), m = as.getLastRow() - 1;
+    const sets = { page_view: {}, rsvp_started: {}, rsvp_submitted: {}, calendar_add: {} };
+    if (m > 0) as.getRange(2, 2, m, 6).getValues().forEach(function (r) {   // cols B..G: Event … Visitor ID
+      if (sets[r[0]]) sets[r[0]][r[5]] = 1;
+    });
+    const count = function (o) { return Object.keys(o).length; };
+    return json_({ ok: true, sheet: ss.getName(), generatedAt: new Date().toISOString(), rsvps: rsvps,
+      funnel: { opened: count(sets.page_view), started: count(sets.rsvp_started),
+                submitted: count(sets.rsvp_submitted), calendar: count(sets.calendar_add) } });
+  } catch (err) {
+    return json_({ ok: false, error: String(err && err.message || err) });
+  }
 }
 
 // ---- Internals ------------------------------------------------------------
